@@ -72,9 +72,8 @@
 .rbc-event {
     border: none !important;
     color: black !important;
-    padding: 10px !important;
-    margin: 10px !important;
-    width: 99% !important;
+    margin: 10px 5px !important;
+    width: 95% !important;
 }
 
 .rbc-event:nth-child(1) {

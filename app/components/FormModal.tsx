@@ -1,15 +1,23 @@
 "use client"
 
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useState } from "react";
-import TeacherFrom from "./forms/TeacherForm";
-import StudentFrom from "./forms/StudentForm";
+// import TeacherFrom from "./forms/TeacherForm";
+// import StudentFrom from "./forms/StudentForm";
+
+const TeacherForm = dynamic(() => import("./forms/TeacherForm"), {
+    loading: () => <h1>Loading...</h1>
+});
+const StudentForm = dynamic(() => import("./forms/StudentForm"), {
+    loading: () => <h1>Loading...</h1>
+});
 
 const forms: {
     [key: string]: (type: "create" | "update", data?: any) => JSX.Element;
 } = {
-    teacher: (type, data) => <TeacherFrom type={type} data={data} />,
-    student: (type, data) => <StudentFrom type={type} data={data} />,
+    teacher: (type, data) => <TeacherForm type={type} data={data} />,
+    student: (type, data) => <StudentForm type={type} data={data} />,
 }
 
 const FormModal = ({ table, type, data, id }: {

@@ -23,7 +23,7 @@ const schema = z.object({
 
 type Inputs = z.infer<typeof schema>;
 
-const StudentFrom = ({ type, data }: { type: "create" | "update"; data?: any }) => {
+const StudentForm = ({ type, data }: { type: "create" | "update"; data?: any }) => {
     const {
         register,
         handleSubmit,
@@ -113,4 +113,4 @@ const StudentFrom = ({ type, data }: { type: "create" | "update"; data?: any }) 
     );
 }
 
-export default StudentFrom;
+export default StudentForm;

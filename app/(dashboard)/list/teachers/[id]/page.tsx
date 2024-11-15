@@ -1,5 +1,6 @@
 import Announcements from "@/app/components/Announcements";
 import BigCalendar from "@/app/components/BigCalendar";
+import FormModal from "@/app/components/FormModal";
 import Performance from "@/app/components/Performance";
 import Image from "next/image";
 import Link from "next/link";
@@ -18,7 +19,25 @@ const SingleTeacherPage = () => {
                                 alt="teacher image" width={144} height={144} className="size-36 rounded-full object-cover" />
                         </div>
                         <div className="w-2/3 flex flex-col justify-between gap-4">
-                            <h1 className="text-xl font-semibold">Leonard Synder</h1>
+                            <div className="flex items-center gap-4">
+                                <h1 className="text-xl font-semibold">Leonard Synder</h1>
+                                <div className="border rounded-full border-white">
+                                    <FormModal table="teacher" type="update" data={{
+                                        id: 1,
+                                        username: "deangd",
+                                        email: "test@test.com",
+                                        password: "xxxxxxxx",
+                                        firstName: "Dean",
+                                        lastName: "Dean",
+                                        phone: "qs4d56464",
+                                        address: "asdjbsfgauh saodjai",
+                                        bloodType: "A+",
+                                        dateOfBirth: "2000-01-01",
+                                        sex: "Male",
+                                        img: "https://images.pexels.com/photos/1043474/pexels-photo-1043474.jpeg?auto=compress&cs=tinysrgb&w=1200",
+                                    }} />
+                                </div>
+                            </div>
                             <p className="text-sm text-gray-500">Lorem ipsum dolor sit amet consectetur adipisicing elit</p>
                             <div className="flex items-center justify-between gap-2 flex-wrap text-xs font-medium">
                                 <div className="w-full md:w-1/3 flex items-center gap-2 lg:w-full 2xl:w-1/3">

@@ -3,17 +3,13 @@ import Pagination from "@/app/components/Pagination";
 import Table from "@/app/components/Table";
 import TableSearch from "@/app/components/TableSearch";
 import { parentsData, role } from "@/app/lib/data";
+import prisma from "@/app/lib/prisma";
+import { ITEM_PER_PAGE } from "@/app/lib/settings";
+import { Parent, Prisma, Student } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
 
-type Parent = {
-    id: number;
-    name: string;
-    email?: string;
-    students?: string[];
-    phone: string;
-    address: string;
-}
+type ParentList = Parent & { students: Student[] }
 
 const columns = [
     {
@@ -42,30 +38,63 @@ const columns = [
     },
 ]
 
-const ParentList = () => {
-    const renderRow = (item: Parent) => (
-        <tr key={item.id} className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight">
-            <td className="flex flex-col md:flex-row items-center gap-2 p-4">
-                <div className="flex flex-col items-center md:items-start">
-                    <h3 className="font-semibold">{item.name}</h3>
-                    <p className="text-xs text-gray-500">{item?.email}</p>
-                </div>
-            </td>
-            <td className="hidden md:table-cell">{item.students?.join(", ")}</td>
-            <td className="hidden lg:table-cell">{item.phone}</td>
-            <td className="hidden lg:table-cell">{item.address}</td>
-            <td>
-                <div className="flex items-center gap-2">
-                    {role === "admin" && (
-                        <>
-                            <FormModal table="parent" type="update" data={item} />
-                            <FormModal table="parent" type="delete" id={item.id} />
-                        </>
-                    )}
-                </div>
-            </td>
-        </tr>
-    )
+const renderRow = (item: ParentList) => (
+    <tr key={item.id} className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight">
+        <td className="flex flex-col md:flex-row items-center gap-2 p-4">
+            <div className="flex flex-col items-center md:items-start">
+                <h3 className="font-semibold">{item.name}</h3>
+                <p className="text-xs text-gray-500">{item?.email}</p>
+            </div>
+        </td>
+        <td className="hidden md:table-cell">{item.students.map(studen => studen.name).join(", ")}</td>
+        <td className="hidden lg:table-cell">{item.phone}</td>
+        <td className="hidden lg:table-cell">{item.address}</td>
+        <td>
+            <div className="flex items-center gap-2">
+                {role === "admin" && (
+                    <>
+                        <FormModal table="parent" type="update" data={item} />
+                        <FormModal table="parent" type="delete" id={item.id} />
+                    </>
+                )}
+            </div>
+        </td>
+    </tr>
+)
+
+const ParentList = async ({ searchParams }: { searchParams: { [key: string]: string | undefined } }) => {
+    const { page, ...queryParams } = await searchParams;
+    const p = page ? parseInt(page) : 1;
+
+    // URL PARAMS CONDITIONS
+
+    const query: Prisma.ParentWhereInput = {}
+    if (queryParams) {
+        for (const [key, value] of Object.entries(queryParams)) {
+            if (value !== undefined) {
+                switch (key) {
+                    case "search":
+                        query.name = { contains: value, mode: "insensitive" }
+                        break;
+                    default: break;
+                }
+            }
+        }
+    }
+
+    const [parents, count] = await prisma.$transaction([
+        prisma.parent.findMany({
+            where: query,
+            include: {
+                students: true
+            },
+            take: ITEM_PER_PAGE,
+            skip: ITEM_PER_PAGE * (p - 1)
+
+        }),
+        prisma.parent.count({ where: query })
+    ])
+
 
     return (
         <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
@@ -88,9 +117,9 @@ const ParentList = () => {
                 </div>
             </div>
             {/* List */}
-            <Table columns={columns} renderRow={renderRow} data={parentsData} />
+            <Table columns={columns} renderRow={renderRow} data={parents} />
             {/* Pagination */}
-            <Pagination />
+            <Pagination count={count} page={p} />
         </div>
     );
 }

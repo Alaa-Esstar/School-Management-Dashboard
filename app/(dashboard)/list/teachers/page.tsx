@@ -5,7 +5,7 @@ import TableSearch from "@/app/components/TableSearch";
 import { role, teachersData } from "@/app/lib/data";
 import prisma from "@/app/lib/prisma";
 import { ITEM_PER_PAGE } from "@/app/lib/settings";
-import { Class, Subject, Teacher } from "@prisma/client";
+import { Class, Prisma, Subject, Teacher } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -85,8 +85,28 @@ const TeacherList = async ({
     const { page, ...queryParams } = await searchParams;
     const p = page ? parseInt(page) : 1;
 
+    // URL PARAMS CONDITIONS
+
+    const query: Prisma.TeacherWhereInput = {}
+    if (queryParams) {
+        for (const [key, value] of Object.entries(queryParams)) {
+            if (value !== undefined) {
+                switch (key) {
+                    case "classId":
+                        query.lessons = { some: { classId: parseInt(value) } }
+                        break;
+                    case "search":
+                        query.name = { contains: value, mode: "insensitive" }
+                        break;
+                    default: break;
+                }
+            }
+        }
+    }
+
     const [teachers, count] = await prisma.$transaction([
         prisma.teacher.findMany({
+            where: query,
             include: {
                 subjects: true,
                 classes: true
@@ -94,7 +114,7 @@ const TeacherList = async ({
             take: ITEM_PER_PAGE,
             skip: ITEM_PER_PAGE * (p - 1)
         }),
-        prisma.teacher.count(),
+        prisma.teacher.count({ where: query }),
     ]);
 
     return (

@@ -2,12 +2,13 @@ import FormModal from "@/app/components/FormModal";
 import Pagination from "@/app/components/Pagination";
 import Table from "@/app/components/Table";
 import TableSearch from "@/app/components/TableSearch";
-import { assignmentsData, role } from "@/app/lib/data";
 import prisma from "@/app/lib/prisma";
 import { ITEM_PER_PAGE } from "@/app/lib/settings";
+import { currentUserId, role } from "@/app/lib/utils";
 import { Assignment, Class, Prisma, Subject, Teacher } from "@prisma/client";
 import Image from "next/image";
-import Link from "next/link";
+
+
 
 type AssignmentsList = Assignment & {
     lesson: {
@@ -37,10 +38,10 @@ const columns = [
         accessor: "dueDate",
         className: "hidden md:table-cell",
     },
-    {
+    ...(role === "admin" || role === "teacher" ? [{
         header: "Actions",
         accessor: "actions",
-    },
+    }] : []),
 ]
 
 const renderRow = (item: AssignmentsList) => (
@@ -48,10 +49,10 @@ const renderRow = (item: AssignmentsList) => (
         <td className="p-4">{item.lesson.subject.name}</td>
         <td>{item.lesson.class.name}</td>
         <td className="hidden md:table-cell">{item.lesson.teacher.name + " " + item.lesson.teacher.surname}</td>
-        <td className="hidden md:table-cell">{new Intl.DateTimeFormat("fr").format(item.dueDate)} {typeof(item.dueDate)}</td>
+        <td className="hidden md:table-cell">{new Intl.DateTimeFormat("fr").format(item.dueDate)} {typeof (item.dueDate)}</td>
         <td>
             <div className="flex items-center gap-2">
-                {role === "admin" && (
+                {(role === "admin" || role === "teacher") && (
                     <>
                         <FormModal table="assignement" type="update" data={item} />
                         <FormModal table="assignement" type="delete" id={item.id} />
@@ -69,25 +70,42 @@ const AssignmentsList = async ({ searchParams }: { searchParams: { [key: string]
     // URL PARAMS CONDITIONS
 
     const query: Prisma.AssignmentWhereInput = {}
+
+    query.lesson = {};
     if (queryParams !== undefined) {
         for (const [key, value] of Object.entries(queryParams)) {
             if (value) {
                 switch (key) {
                     case "classId":
-                        query.lesson = { classId: parseInt(value) }
+                        query.lesson.classId = parseInt(value)
                         break;
                     case "teacherId":
-                        query.lesson = { teacherId: value }
+                        query.lesson.teacherId = value
                         break;
                     case "search":
-                        query.lesson = {
-                            subject: { name: { contains: value, mode: "insensitive" } },
-                        }
+                        query.lesson.subject = { name: { contains: value, mode: "insensitive" } }
                         break;
                     default: break;
                 }
             }
         }
+    }
+
+    // ROLE CONDITIONS
+    switch (role) {
+        case "admin":
+            break;
+        case "teacher":
+            query.lesson.teacherId = currentUserId!;
+            break;
+        case "student":
+            query.lesson.class = { students: { some: { id: currentUserId! } } }
+            break;
+        case "parent":
+            query.lesson.class = { students: { some: { parentId: currentUserId! } } }
+            break;
+        default:
+            break;
     }
 
     const [Assignments, count] = await prisma.$transaction([
@@ -123,7 +141,7 @@ const AssignmentsList = async ({ searchParams }: { searchParams: { [key: string]
                         <button className="size-8 flex items-center justify-center rounded-full bg-lamaYellow">
                             <Image src="/sort.png" alt="filter" width={14} height={14} />
                         </button>
-                        {role === "admin" &&
+                        {(role === "admin" || role === "teacher") &&
                             <FormModal table="assignement" type="create" />
                         }
                     </div>
